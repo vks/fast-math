@@ -32,7 +32,7 @@ pub fn atan(x: f32) -> f32 {
 ///
 /// The maximum absolute error across all f32s is less than 0.0038.
 #[inline]
-pub fn atan2(y: f32, x: f32) -> f32 {
+pub fn atan2(mut y: f32, mut x: f32) -> f32 {
     if x == 0. {
         if y > 0. {
             return PI / 2.;
@@ -48,31 +48,36 @@ pub fn atan2(y: f32, x: f32) -> f32 {
             (false, false) => -PI,
         };
     }
-    if x.abs() > y.abs() {
-        let z = if y.is_finite() || x.is_finite() {
-            y / x
-        } else {
-            y.signum() * x.signum()
-        };
-        if x > 0. {
-            atan_raw(z)
-        } else if y >= 0. {
-            atan_raw(z) + PI
-        } else {
-            atan_raw(z) - PI
-        }
-    } else {
-        // Use `atan(1/x) == sign(x) * pi / 2 - atan(x).
-        let z = if x.is_finite() || y.is_finite() {
-            x / y
-        } else {
-            x.signum() * y.signum()
-        };
-        if y > 0. {
-            -atan_raw(z) + PI / 2.
-        } else {
-            -atan_raw(z) - PI / 2.
-        }
+
+    if y.is_infinite() && x.is_infinite() {
+        y = y.signum();
+        x = x.signum();
+    }
+
+    const N1: f32 = 1.0584;
+    const N2: f32 = 0.273;
+
+    match (y.is_sign_positive(), x.is_sign_positive(), y.abs() > x.abs()) {
+        // Octants 1 and 8
+        (true, true, false) | (false, true, false) => {
+            let z = y / x;
+            z * (N1 - y.signum() * N2 * z)
+        },
+        // Octants 2 and 3
+        (true, true, true) | (true, false, true) => {
+            let z = x / y;
+            PI / 2. - z * (N1 - x.signum() * N2 * z)
+        },
+        // Octants 4 and 5
+        (true, false, false) | (false, false, false) => {
+            let z = y / x;
+            y.signum() * PI + z * (N1 + y.signum() * N2 * z)
+        },
+        // Octants 6 and 7
+        (false, false, true) | (false, true, true) => {
+            let z = x / y;
+            -PI / 2. - z * (N1 + x.signum() * N2 * z)
+        },
     }
 }
 
