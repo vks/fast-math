@@ -2,9 +2,9 @@ use std::f32::consts::PI;
 
 /// Compute a fast approximation of the inverse tangent for `|x| < 1`.
 ///
-/// This will return unspecified nonsense if `x` is doesn't not
-/// satisfy those constraints. Use `atan2` if correct handling is
-/// required (at the expense of some speed).
+/// This will return unspecified nonsense if `x` is doesn't not satisfy those
+/// constraints. Use `atan2` if correct handling is required (at the expense of
+/// some speed).
 #[inline]
 pub fn atan_raw(x: f32) -> f32 {
     // Quadratic approximation recommended in
@@ -30,30 +30,11 @@ pub fn atan(x: f32) -> f32 {
 
 /// Compute a fast approximation of the four quadrant arctangent of `y` and `x`.
 ///
-/// The maximum absolute error across all f32s is less than 0.0038.
+/// This might not return correct results if some of the inputs are zero, nan or
+/// infinite. Use `atan2` if correct handling is required (at the expense of
+/// some speed).
 #[inline]
-pub fn atan2(mut y: f32, mut x: f32) -> f32 {
-    if x == 0. {
-        if y > 0. {
-            return PI / 2.;
-        } else if y < 0. {
-            return -PI / 2.;
-        } else if y.is_nan() {
-            return y;
-        }
-        return match (y.is_sign_positive(), x.is_sign_positive()) {
-            (true, true) => 0.,
-            (true, false) => PI,
-            (false, true) => -0.,
-            (false, false) => -PI,
-        };
-    }
-
-    if y.is_infinite() && x.is_infinite() {
-        y = y.signum();
-        x = x.signum();
-    }
-
+pub fn atan2_raw(y: f32, x: f32) -> f32 {
     const N1: f32 = 1.0584;
     const N2: f32 = 0.273;
 
@@ -79,6 +60,38 @@ pub fn atan2(mut y: f32, mut x: f32) -> f32 {
             -PI / 2. - z * (N1 + x.signum() * N2 * z)
         },
     }
+}
+
+/// Compute a fast approximation of the four quadrant arctangent of `y` and `x`.
+///
+/// The maximum absolute error across all f32s is less than 0.0038.
+///
+/// See also `atan2_raw` which does not work for some corner cases, but is
+/// faster.
+#[inline]
+pub fn atan2(mut y: f32, mut x: f32) -> f32 {
+    if x == 0. {
+        if y > 0. {
+            return PI / 2.;
+        } else if y < 0. {
+            return -PI / 2.;
+        } else if y.is_nan() {
+            return y;
+        }
+        return match (y.is_sign_positive(), x.is_sign_positive()) {
+            (true, true) => 0.,
+            (true, false) => PI,
+            (false, true) => -0.,
+            (false, false) => -PI,
+        };
+    }
+
+    if y.is_infinite() && x.is_infinite() {
+        y = y.signum();
+        x = x.signum();
+    }
+
+    atan2_raw(y, x)
 }
 
 #[cfg(test)]
@@ -219,6 +232,39 @@ mod benches {
         b.iter(|| {
             for &x in black_box(TAB) {
                 black_box(x.atan());
+            }
+        })
+    }
+
+    #[bench]
+    fn atan2(b: &mut Bencher) {
+        b.iter(|| {
+            for &x in black_box(TAB) {
+                for &y in black_box(TAB) {
+                    black_box(super::atan2(y, x));
+                }
+            }
+        })
+    }
+
+    #[bench]
+    fn atan2_raw(b: &mut Bencher) {
+        b.iter(|| {
+            for &x in black_box(TAB) {
+                for &y in black_box(TAB) {
+                    black_box(super::atan2_raw(y, x));
+                }
+            }
+        })
+    }
+
+    #[bench]
+    fn atan2_std(b: &mut Bencher) {
+        b.iter(|| {
+            for &x in black_box(TAB) {
+                for &y in black_box(TAB) {
+                    black_box(y.atan2(x));
+                }
             }
         })
     }
