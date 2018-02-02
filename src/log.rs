@@ -1,5 +1,5 @@
 use float;
-use std::f32 as f;
+use core::f32 as f;
 
 /// Compute a fast approximation of the base-2 logarithm of `x`.
 ///
@@ -79,7 +79,7 @@ pub fn log2_raw(x: f32) -> f32 {
 mod tests {
     use super::*;
     use quickcheck as qc;
-    use std::f32 as f;
+    use core::f32 as f;
 
     #[test]
     fn log2_rel_err_qc() {
@@ -112,7 +112,7 @@ mod tests {
                         "{:.8}: {:.8}, {:.8}. {:.4}", x, e, t, rel);
             }
         }
-        println!("maximum {}", max);
+        //println!("maximum {}", max);
     }
 
     #[test]
