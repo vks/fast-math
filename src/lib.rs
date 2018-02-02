@@ -34,6 +34,7 @@ pub use atan::{atan_raw, atan, atan2};
 
 mod log;
 mod atan;
+mod traits;
 
 #[doc(hidden)]
 pub mod float;

@@ -1,4 +1,7 @@
-use std::f32::consts::PI;
+use core::f32::consts::PI;
+
+#[cfg(not(test))]
+use super::traits::BasicFloat;
 
 /// Compute a fast approximation of the inverse tangent for `|x| < 1`.
 ///
@@ -98,7 +101,7 @@ pub fn atan2(mut y: f32, mut x: f32) -> f32 {
 mod tests {
     use super::*;
     use quickcheck as qc;
-    use std::f32 as f;
+    use core::f32 as f;
 
     /// Maximal absolute error according to paper.
     const TOL: f32 = 0.0038;
